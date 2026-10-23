@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meu Portal · Biblioteca</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .aluno-header { display: flex; justify-content: space-between; align-items: center; background: var(--branco); padding: 20px 32px; border-radius: 18px; box-shadow: var(--sombra); margin-bottom: 24px; }
+  .aluno-info h2 { margin: 0; font-size: 22px; }
+  .aluno-info p { margin: 4px 0 0; color: var(--texto-suave); font-size: 14px; }
+  .btn-sair { background: var(--rosa); color: #7a3b4a; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+  .btn-sair:hover { background: var(--rosa-forte); }
+  .emprestimo-card { display: flex; align-items: center; justify-content: space-between; background: var(--fundo); padding: 16px; border-radius: 14px; margin-bottom: 12px; border-left: 5px solid var(--bege-forte); transition: 0.3s; }
+  .emprestimo-card h4 { margin: 0 0 4px; font-size: 16px; }
+  .emprestimo-card p { margin: 0; font-size: 13px; color: var(--texto-suave); }
+  
+  /* Status Devolvido */
+  .emprestimo-card.devolvido { border-left-color: var(--verde-forte); opacity: 0.7; }
+  
+  /* AVISO DE ATRASO PISCANTE */
+  @keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(236, 176, 189, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(236, 176, 189, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(236, 176, 189, 0); }
+  }
+  .emprestimo-card.atrasado { 
+    border-left-color: #e63946; 
+    background: #fff0f0; 
+    animation: pulse-red 2s infinite; 
+  }
+  .acoes-emprestimo { display: flex; gap: 10px; align-items: center; }
+</style>
+</head>
+<body style="display: block; padding: 32px; background: var(--fundo); max-width: 900px; margin: 0 auto;">
+
+  <div class="aluno-header">
+    <div class="aluno-info">
+      <h2 id="boas-vindas">Olá, Aluno!</h2>
+      <p id="dados-aluno">Matrícula: ... | Turma: ...</p>
+    </div>
+    <button class="btn-sair" onclick="sair()">Sair</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Meus Empréstimos</h3>
+      <span class="muted">Acompanhe suas datas de devolução</span>
+    </div>
+    <div id="lista-emprestimos"></div>
+  </div>
+
+<script>
+const aluno = JSON.parse(localStorage.getItem('alunoLogado'));
+if (!aluno) {
+  window.location.href = 'login.html';
+}
+
+document.getElementById('boas-vindas').textContent = `Olá, ${aluno.nome.split(' ')[0]}! 👋`;
+document.getElementById('dados-aluno').textContent = `Matrícula: ${aluno.matricula} | Turma: ${aluno.serie || 'Não informada'}`;
+
+function sair() {
+  localStorage.removeItem('alunoLogado');
+  window.location.href = 'login.html';
+}
+
+function formatData(iso) {
+  if (!iso) return '-';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+async function carregarMeusEmprestimos() {
+  const res = await fetch('/api/emprestimos');
+  const todos = await res.json();
+  const meus = todos.filter(e => e.aluno_id === aluno.id);
+  
+  const container = document.getElementById('lista-emprestimos');
+  if (meus.length === 0) {
+    container.innerHTML = '<div class="empty">Você não possui empréstimos ativos ou passados.</div>';
+    return;
+  }
+
+  const hoje = new Date().toISOString().slice(0,10);
+
+  container.innerHTML = meus.map(e => {
+    let classe = '';
+    let statusTexto = '';
+    
+    if (e.status === 'devolvido') {
+      classe = 'devolvido';
+      statusTexto = 'Devolvido ✔️';
+    } else if (e.data_prevista < hoje) {
+      classe = 'atrasado';
+      statusTexto = 'Atrasado ⚠️';
+    } else {
+      statusTexto = 'Em andamento ⏳';
+    }
+
+    // Só mostra o botão de renovar se estiver emprestado e tiver menos de 1 renovação
+    let botaoRenovar = '';
+    if (e.status === 'emprestado' && (e.renovacoes || 0) < 1) {
+      botaoRenovar = `<button class="btn ghost small" onclick="renovar(${e.id})" style="margin-left: 10px;">🔄 Renovar</button>`;
+    } else if (e.status === 'emprestado') {
+      botaoRenovar = `<span class="muted" style="margin-left: 10px; font-size:11px;">(Limite de renovação atingido)</span>`;
+    }
+
+    return `
+      <div class="emprestimo-card ${classe}">
+        <div>
+          <h4>📖 ${e.titulo}</h4>
+          <p>Emprestado em: ${formatData(e.data_emprestimo)} | <strong>Devolver até: ${formatData(e.data_prevista)}</strong></p>
+        </div>
+        <div class="acoes-emprestimo">
+          ${botaoRenovar}
+          <span class="status ${e.status === 'devolvido' ? 'devolvido' : (e.data_prevista < hoje ? 'atrasado' : 'andamento')}">
+            ${statusTexto}
+          </span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function renovar(id) {
+  if (!confirm("Deseja renovar este empréstimo por mais 7 dias? (Só é permitido 1 vez)")) return;
+  
+  const res = await fetch(`/api/emprestimos/${id}/renovar`, { method: 'PUT' });
+  const data = await res.json();
+  
+  if (res.ok) {
+    alert("Empréstimo renovado com sucesso! Nova data: " + formatData(data.novaData));
+    carregarMeusEmprestimos();
+  } else {
+    alert(data.error);
+  }
+}
+
+carregarMeusEmprestimos();
+</script>
+</body>
+</html>

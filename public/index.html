@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Biblioteca Semente · Gestão</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">📚</div>
+    <div class="logo-text"><strong>Biblioteca</strong><span>Semente</span></div>
+  </div>
+  <nav>
+    <a class="nav-item active" data-page="dashboard">📊<span>Dashboard</span></a>
+    <a class="nav-item" data-page="livros">📖<span>Livros</span></a>
+    <a class="nav-item" data-page="alunos">🎓<span>Alunos</span></a>
+    <a class="nav-item" data-page="emprestimos">🔁<span>Empréstimos</span></a>
+  </nav>
+    <div class="sidebar-footer">
+    <a href="login.html" style="display:block; margin-bottom:10px; color:var(--verde-forte); font-weight:bold; text-decoration:none;">🎓 Portal do Aluno</a>
+    Feito com 💗
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <h2 id="page-title">Dashboard</h2>
+    <div class="user-chip">Olá, Bibliotecária 👋</div>
+  </header>
+
+  <!-- DASHBOARD -->
+  <section id="page-dashboard" class="page active">
+    <div class="stats">
+      <div class="stat-card rosa">
+        <span class="stat-icon">📚</span>
+        <div><p>Total de Livros</p><h3 id="stat-livros">0</h3></div>
+      </div>
+      <div class="stat-card verde">
+        <span class="stat-icon">🎓</span>
+        <div><p>Alunos</p><h3 id="stat-alunos">0</h3></div>
+      </div>
+      <div class="stat-card bege">
+        <span class="stat-icon">🔁</span>
+        <div><p>Em andamento</p><h3 id="stat-ativos">0</h3></div>
+      </div>
+      <div class="stat-card rosa">
+        <span class="stat-icon">⏰</span>
+        <div><p>Atrasados</p><h3 id="stat-atrasados">0</h3></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Últimos Empréstimos</h3>
+        <span class="muted">Movimentações recentes</span>
+      </div>
+      <div id="recentes" class="recentes"></div>
+    </div>
+  </section>
+
+  <!-- LIVROS -->
+  <section id="page-livros" class="page">
+    <div class="toolbar">
+      <input id="busca-livros" class="search" placeholder="🔍 Buscar por título ou autor...">
+      <button class="btn primary" onclick="abrirLivro()">+ Novo Livro</button>
+    </div>
+    <div class="filters" id="filtros-livros">
+      <button class="chip active" data-filter="todos">Todos</button>
+      <button class="chip" data-filter="disponiveis">Disponíveis</button>
+      <button class="chip" data-filter="emprestados">Com Empréstimos</button>
+    </div>
+    <div id="grid-livros" class="book-grid"></div>
+  </section>
+
+  <!-- ALUNOS -->
+  <section id="page-alunos" class="page">
+    <div class="toolbar">
+      <input id="busca-alunos" class="search" placeholder="🔍 Buscar por nome ou matrícula...">
+      <button class="btn primary" onclick="abrirAluno()">+ Novo Aluno</button>
+    </div>
+    <div class="panel">
+      <table class="table">
+        <thead><tr><th>Nome</th><th>Matrícula</th><th>Turma</th><th>Contato</th><th></th></tr></thead>
+        <tbody id="tbody-alunos"></tbody>
+      </table>
+    </div>
+  </section>
+
+   <!-- EMPRÉSTIMOS -->
+  <section id="page-emprestimos" class="page">
+        <div class="toolbar">
+      <button class="btn primary" onclick="abrirEmprestimo()">+ Novo Empréstimo</button>
+      <button class="btn ghost" onclick="exportarCSV()">📥 Exportar Relatório (CSV)</button>
+      
+      <!-- NOVO SISTEMA DE NOTIFICAÇÕES -->
+      <div class="notificacoes-container" style="margin-left: auto;">
+        <button class="btn-sino" onclick="toggleNotificacoes(event)">
+          🔔
+          <span class="badge-notificacao" id="badge-notificacao"></span>
+        </button>
+        <div class="dropdown-notificacoes" id="dropdown-notificacoes">
+          <div class="dropdown-header">Notificações</div>
+          <div class="dropdown-lista" id="lista-notificacoes">
+            <div class="dropdown-vazio">Nenhuma notificação nova.</div>
+          </div>
+        </div>
+      </div>
+      <!-- FIM DO SISTEMA DE NOTIFICAÇÕES -->
+      
+    </div>
+    
+    
+    <div class="panel">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Livro</th>
+            <th>Aluno</th>
+            <th>Empréstimo</th>
+            <th>Previsto</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-emprestimos"></tbody>
+      </table>
+    </div>
+  </section>
+
+<!-- MODAL LIVRO -->
+<div id="modal-livro" class="modal">
+  <div class="modal-box">
+    <h3 id="titulo-modal-livro">Novo Livro</h3>
+    <form id="form-livro">
+      <input type="hidden" id="livro-id">
+      <label>Título *<input id="livro-titulo" required></label>
+      <label>Autor *<input id="livro-autor" required></label>
+      <div class="row">
+        <label>Gênero<input id="livro-genero"></label>
+        <label>Ano<input id="livro-ano" type="number"></label>
+      </div>
+      <div class="row">
+        <label>Editora<input id="livro-editora"></label>
+        <label>ISBN<input id="livro-isbn"></label>
+      </div>
+            <div class="row">
+        <label>Editora<input id="livro-editora"></label>
+        <label>ISBN<input id="livro-isbn"></label>
+      </div>
+      <!-- ADICIONE ESTA LINHA ABAIXO -->
+      <label>Capa (URL da Imagem)<input id="livro-capa" placeholder="https://..."></label>
+      
+      <label>Quantidade<input id="livro-quantidade" type="number" min="1" value="1" required></label>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" onclick="fechar('modal-livro')">Cancelar</button>
+        <button type="submit" class="btn primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL ALUNO -->
+<div id="modal-aluno" class="modal">
+  <div class="modal-box">
+    <h3 id="titulo-modal-aluno">Novo Aluno</h3>
+    <form id="form-aluno">
+      <input type="hidden" id="aluno-id">
+      <label>Nome *<input id="aluno-nome" required></label>
+      <div class="row">
+        <label>Matrícula *<input id="aluno-matricula" required></label>
+        <label>Turma<input id="aluno-serie"></label>
+      </div>
+      <label>E-mail<input id="aluno-email" type="email"></label>
+      <label>Telefone<input id="aluno-telefone"></label>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" onclick="fechar('modal-aluno')">Cancelar</button>
+        <button type="submit" class="btn primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL EMPRÉSTIMO -->
+<div id="modal-emprestimo" class="modal">
+  <div class="modal-box">
+    <h3>Novo Empréstimo</h3>
+    <form id="form-emprestimo">
+      <label>Livro *<select id="emp-livro" required></select></label>
+      <label>Aluno *<select id="emp-aluno" required></select></label>
+      <label>Devolução prevista *<input id="emp-data" type="date" required></label>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" onclick="fechar('modal-emprestimo')">Cancelar</button>
+        <button type="submit" class="btn primary">Registrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

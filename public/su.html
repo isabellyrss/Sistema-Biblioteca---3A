@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tela de Login Simples</title>
+    <!-- Importa a biblioteca do Supabase diretamente no HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script&gt;
+</head>
+<body>
+
+    <h1>Login</h1>
+   
+    <form id="formLogin">
+        <label for="usuario">Usuário:</label><br>
+        <input type="text" id="usuario" name="usuario" required><br><br>
+       
+        <label for="senha">Senha:</label><br>
+        <input type="password" id="senha" name="senha" required><br><br>
+       
+        <button type="submit">Entrar</button>
+    </form>
+
+    <p id="mensagemRetorno"></p>
+
+    <script>
+        // 1. Configure suas credenciais do Supabase aqui
+        const supabaseUrl = 'SUA_URL_DO_SUPABASE';
+        const supabaseKey = 'SUA_CHAVE_ANON_DO_SUPABASE';
+       
+        // Inicializa o cliente do Supabase
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // 2. Lógica para interceptar o envio do formulário e consultar o banco
+        document.getElementById('formLogin').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Evita o recarregamento da página
+
+            // Captura os valores digitados
+            const usuarioDigitado = document.getElementById('usuario').value;
+            const senhaDigitada = document.getElementById('senha').value;
+            const mensagemDiv = document.getElementById('mensagemRetorno');
+
+            mensagemDiv.innerText = "Validando...";
+
+            // Consulta no Supabase procurando um registro com aquele usuário e senha
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select('*')
+                .eq('username', usuarioDigitado)
+                .eq('password', senhaDigitada);
+
+            if (error) {
+                mensagemDiv.innerText = "Erro ao conectar com o banco de dados: " + error.message;
+                return;
+            }
+
+            // Verifica se a consulta retornou algum usuário correspondente
+            if (data && data.length > 0) {
+                mensagemDiv.innerText = "Acesso permitido! Bem-vindo, " + data[0].username + ".";
+                mensagemDiv.style.color = "green";
+                // Aqui você pode redirecionar para outra página usando window.location.href = 'painel.html';
+            } else {
+                mensagemDiv.innerText = "Acesso negado: Usuário ou senha incorretos.";
+                mensagemDiv.style.color = "red";
+            }
+        });
+    </script>
+
+</body>
+</htm
