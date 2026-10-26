@@ -10,15 +10,12 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
   const db = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'biblioteca',
-  port: process.env.DB_PORT || 3306,
+  uri: process.env.DATABASE_URL, 
+  connectionLimit: 5,
   dateStrings: true,
-  waitForConnections: true,
-  connectionLimit: 10
+  waitForConnections: true
 });
+
 // ---------- DASHBOARD ----------
 app.get('/api/dashboard', async (req, res) => {
   try {
@@ -230,4 +227,4 @@ app.put('/api/notificacoes/ler', async (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(3000, () => console.log('✅ http://localhost:3000'));
+module.exports = app;
